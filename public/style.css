@@ -328,6 +328,21 @@ table.imageres td.dpi, table.imageres td.min-dpi { font-weight: 600; }
 table.imageres td.min-dpi.negative { color: var(--danger-text); }
 table.imageres .badge { margin-left: 0; }
 
+/* ---- 裁切与出血盒核验 ---- */
+.badge.undeclared {
+  background: var(--blank);
+  border: 1px solid var(--blank-border);
+  color: var(--muted);
+}
+.page-card.undeclared { border-style: dashed; }
+
+table.trimbleed { margin-top: 6px; }
+table.trimbleed td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 @media (max-width: 560px) {
   .summary { grid-template-columns: 1fr; gap: 2px; }
   .radio-row { flex-direction: column; gap: 8px; }

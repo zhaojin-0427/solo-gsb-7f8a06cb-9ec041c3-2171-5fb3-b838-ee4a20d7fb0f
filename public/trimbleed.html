@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>裁切与出血盒核验（本地）</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main class="container">
+    <nav class="topnav">
+      <a href="/">← 返回骑马订拼版</a>
+      <a href="/preflight.html">印前文字安全区预检 →</a>
+      <a href="/pagenumbers.html">原稿页脚页码核对 →</a>
+      <a href="/fonts.html">原稿字体嵌入核查 →</a>
+      <a href="/imageresolution.html">原稿位图有效分辨率预检 →</a>
+    </nav>
+    <h1>裁切与出血盒核验</h1>
+    <p class="subtitle">
+      本地处理，文件不离开本机。上传原稿 PDF 并填写成品宽、高与最低出血量，
+      逐页读取继承的 MediaBox / CropBox / Rotate 与页面显式声明的 TrimBox / BleedBox，
+      按旋转后的阅读方向核验成品尺寸（误差超过 0.5 mm 报尺寸不符），并以
+      BleedBox ∩ CropBox ∩ MediaBox 为可用出血范围逐边核验出血量。
+    </p>
+
+    <section class="card">
+      <form id="trimbleed-form">
+        <div class="field">
+          <label for="pdf">选择原稿 PDF 文件</label>
+          <input type="file" id="pdf" name="pdf" accept="application/pdf,.pdf" required />
+          <small class="hint">与拼版页相同的上传限制：单个 PDF 文件、上限 100 MB、未加密。</small>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="trimWidthMm">成品宽度（毫米）</label>
+            <input type="number" id="trimWidthMm" name="trimWidthMm"
+                   min="0.1" step="0.1" value="210" required />
+          </div>
+          <div class="field">
+            <label for="trimHeightMm">成品高度（毫米）</label>
+            <input type="number" id="trimHeightMm" name="trimHeightMm"
+                   min="0.1" step="0.1" value="297" required />
+          </div>
+        </div>
+        <div class="field">
+          <label for="minBleedMm">最低出血量（毫米）</label>
+          <input type="number" id="minBleedMm" name="minBleedMm"
+                 min="0.1" step="0.1" value="3" required />
+          <small class="hint">三项均须大于 0；按旋转后的阅读方向与 TrimBox 比较。</small>
+        </div>
+
+        <button type="submit" id="submit-btn">上传并核验</button>
+      </form>
+    </section>
+
+    <div id="error" class="error-box" hidden></div>
+    <div id="loading" class="loading" hidden>正在读取页面盒并核验尺寸与出血，请稍候…</div>
+
+    <section id="result" hidden>
+      <div class="card summary-card">
+        <h2>核验结果</h2>
+        <dl id="summary" class="summary"></dl>
+      </div>
+      <div id="pages"></div>
+      <p class="footnote">
+        说明：只核验页面盒（MediaBox / CropBox / TrimBox / BleedBox）的几何关系，
+        不判断页面内容是否实际铺满出血区；TrimBox、BleedBox 只认页面显式声明，
+        未声明时不套用默认盒；可用出血范围 = BleedBox ∩ CropBox ∩ MediaBox；
+        四边数值按旋转后的阅读方向给出，负值表示 TrimBox 越出可用出血范围。
+      </p>
+    </section>
+
+    <footer class="footer">
+      判定依据：TrimBox 尺寸与成品误差超过 0.5 mm 报尺寸不符；
+      可用出血严格小于最低出血量报风险，恰好达到不报。
+    </footer>
+  </main>
+  <script src="/trimbleed.js"></script>
+</body>
+</html>

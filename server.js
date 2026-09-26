@@ -9,6 +9,7 @@ import { analyzeTextSafety, PreflightError } from './preflight.js';
 import { checkPageNumbers, PageNumberError } from './pagenumbers.js';
 import { checkFontEmbedding, FontCheckError } from './fonts.js';
 import { analyzeImageResolution, ImageResolutionError } from './imageresolution.js';
+import { checkTrimBleed, TrimBleedError } from './trimbleed.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -260,6 +261,53 @@ app.post('/api/image-resolution', (req, res) => {
       res.json({ originalName, ...report });
     } catch (e) {
       const status = e instanceof ImageResolutionError ? 400 : 500;
+      if (status === 500) console.error(e);
+      res.status(status).json({
+        error:
+          status === 400
+            ? e.message
+            : '服务器处理失败，请检查文件后重试。',
+      });
+    }
+  });
+});
+
+// 裁切与出血盒核验：沿用同一套上传限制（multer 100 MB、仅 PDF），
+// 服务端用 pdf-lib 逐页读取继承的 MediaBox/CropBox/Rotate 与页面显式声明的
+// TrimBox/BleedBox，核验成品尺寸与四边可用出血。
+app.post('/api/trimbleed', (req, res) => {
+  upload.single('pdf')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res
+          .status(400)
+          .json({ error: `文件过大，上限 ${MAX_FILE_MB} MB。` });
+      }
+      return res.status(400).json({ error: `上传失败：${err.message}` });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: '未收到文件，请选择要上传的 PDF。' });
+    }
+
+    const trimWidthMm = Number(req.body.trimWidthMm);
+    const trimHeightMm = Number(req.body.trimHeightMm);
+    const minBleedMm = Number(req.body.minBleedMm);
+
+    try {
+      const report = await checkTrimBleed(req.file.buffer, {
+        trimWidthMm,
+        trimHeightMm,
+        minBleedMm,
+      });
+
+      const originalName =
+        req.file.originalname
+          ? Buffer.from(req.file.originalname, 'latin1').toString('utf8')
+          : 'document.pdf';
+
+      res.json({ originalName, ...report });
+    } catch (e) {
+      const status = e instanceof TrimBleedError ? 400 : 500;
       if (status === 500) console.error(e);
       res.status(status).json({
         error:
