@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev || npm install --omit=dev
 
-COPY server.js imposition.js preflight.js pagenumbers.js fonts.js imageresolution.js ./
+COPY server.js imposition.js preflight.js pagenumbers.js fonts.js imageresolution.js bleedboxes.js ./
 COPY public ./public
 
 ENV NODE_ENV=production

@@ -9,6 +9,7 @@ import { analyzeTextSafety, PreflightError } from './preflight.js';
 import { checkPageNumbers, PageNumberError } from './pagenumbers.js';
 import { checkFontEmbedding, FontCheckError } from './fonts.js';
 import { analyzeImageResolution, ImageResolutionError } from './imageresolution.js';
+import { checkBleedBoxes, BleedBoxError } from './bleedboxes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -260,6 +261,53 @@ app.post('/api/image-resolution', (req, res) => {
       res.json({ originalName, ...report });
     } catch (e) {
       const status = e instanceof ImageResolutionError ? 400 : 500;
+      if (status === 500) console.error(e);
+      res.status(status).json({
+        error:
+          status === 400
+            ? e.message
+            : '服务器处理失败，请检查文件后重试。',
+      });
+    }
+  });
+});
+
+// 原稿裁切盒与出血盒核验：沿用同一套上传限制（multer 100 MB、仅 PDF），
+// 服务端用 pdf-lib 逐页读取继承的 MediaBox/CropBox/Rotate 与页面显式声明的
+// TrimBox/BleedBox，按旋转后阅读方向核对成品尺寸并逐边计算可用出血。
+app.post('/api/bleedboxes', (req, res) => {
+  upload.single('pdf')(req, res, async (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res
+          .status(400)
+          .json({ error: `文件过大，上限 ${MAX_FILE_MB} MB。` });
+      }
+      return res.status(400).json({ error: `上传失败：${err.message}` });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: '未收到文件，请选择要上传的 PDF。' });
+    }
+
+    const finishedWidthMm = Number(req.body.finishedWidthMm);
+    const finishedHeightMm = Number(req.body.finishedHeightMm);
+    const minBleedMm = Number(req.body.minBleedMm);
+
+    try {
+      const report = await checkBleedBoxes(req.file.buffer, {
+        finishedWidthMm,
+        finishedHeightMm,
+        minBleedMm,
+      });
+
+      const originalName =
+        req.file.originalname
+          ? Buffer.from(req.file.originalname, 'latin1').toString('utf8')
+          : 'document.pdf';
+
+      res.json({ originalName, ...report });
+    } catch (e) {
+      const status = e instanceof BleedBoxError ? 400 : 500;
       if (status === 500) console.error(e);
       res.status(status).json({
         error:

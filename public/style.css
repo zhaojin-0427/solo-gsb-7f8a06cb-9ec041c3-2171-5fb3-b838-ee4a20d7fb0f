@@ -328,6 +328,43 @@ table.imageres td.dpi, table.imageres td.min-dpi { font-weight: 600; }
 table.imageres td.min-dpi.negative { color: var(--danger-text); }
 table.imageres .badge { margin-left: 0; }
 
+/* ---- 裁切与出血盒核验 ---- */
+.badge.undeclared {
+  background: #fdf3e3;
+  border: 1px solid var(--back-border);
+  color: #8a5a00;
+}
+.page-card.undeclared { border-style: dashed; }
+
+table.bleed-boxes, table.bleed-edges {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  margin-top: 6px;
+}
+table.bleed-boxes th, table.bleed-boxes td,
+table.bleed-edges th, table.bleed-edges td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  text-align: left;
+}
+table.bleed-boxes th, table.bleed-edges th { background: #f0f2f5; font-weight: 600; }
+table.bleed-boxes td.num, table.bleed-edges td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+table.bleed-boxes td.boxname { white-space: nowrap; font-weight: 600; }
+table.bleed-edges .badge { margin-left: 0; }
+
+.size-check { margin: 10px 0 4px; font-size: 14px; }
+.size-check.size-mismatch {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+.size-check.size-ok { color: #146c2e; }
+.table-caption { margin: 10px 0 4px; color: var(--muted); font-size: 13px; }
+
 @media (max-width: 560px) {
   .summary { grid-template-columns: 1fr; gap: 2px; }
   .radio-row { flex-direction: column; gap: 8px; }
